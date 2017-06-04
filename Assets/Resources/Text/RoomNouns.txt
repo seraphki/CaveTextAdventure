@@ -1,0 +1,12 @@
+Cave
+Room
+Expanse
+Place
+Hole
+Cavern
+Cavity
+Den
+Grotto
+Bubble
+Armpit
+Hollow
