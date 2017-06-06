@@ -1,5 +1,4 @@
-﻿public enum Direction { North, East, South, West }
-public class Cave
+﻿public class Cave
 {
     public Level[] Levels;
 

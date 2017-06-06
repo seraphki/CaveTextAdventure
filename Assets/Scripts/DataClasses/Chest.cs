@@ -22,7 +22,7 @@ public class Chest
 
     public void OpenChest()
     {
-        UIController.Instance.TextOutputNewLine();
+        UIController.Instance.NewLine();
         if (ItemId > 0)
         {
             InventoryManager.Instance.AddItem(ItemId, 1);

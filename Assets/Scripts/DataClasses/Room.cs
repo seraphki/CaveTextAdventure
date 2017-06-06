@@ -10,6 +10,7 @@ public class Room
     public bool Exit = false;
     public bool Entrance = false;
     public Vector2 Position;
+	public int LastEnteredDirection;
 
     private int _level;
     private int[] _connectedRooms;
@@ -37,8 +38,9 @@ public class Room
         EnemyId = CaveManager.Instance.GetRandomLevelEnemyId(_level);
     }
 
-    public void Enter()
+    public void Enter(int direction)
     {
+		LastEnteredDirection = direction;
         Look();
 
         if (Entrance)
@@ -67,42 +69,26 @@ public class Room
 
     public void Look()
     {
-        string text = "";
-        
-        for (int i = 0; i < _connectedRooms.Length; i++)
-        {
-            if (_connectedRooms[i] >= 0)
-            {
-                text += text == "" ? "" : "\n";
-                text += "There is a room to the " + (Direction)i + ".";
-            }
-        }
-
-        if (Exit)
-        {
-            text += "\nThis is the exit to the next level.";
-        }
-        else if (Entrance)
-        {
-            text += "\nThis is the entrance to this level.";
-        }
-        else if (EnemyId > 0)
-        {
-            string enemyName = EnemyLibrary.Instance.GetEnemyData(EnemyId).Name;
-            text += "\nThere is a " + enemyName + ".";
-        }
-        else if (RoomChest != null)
-        {
-            text += "\nThere is a chest.";
-        }
-
-        UIController.Instance.TextOutputUpdate(text);
+		MessageManager.Instance.SendRoomMessage(this);
     }
 
     public int GetConnectingRoom(int direction)
     {
         return _connectedRooms[direction];
     }
+
+	public List<int> GetConnectingDirections()
+	{
+		List<int> directions = new List<int>();
+		for (int i = 0; i < _connectedRooms.Length; i++)
+		{
+			if (_connectedRooms[i] >= 0)
+			{
+				directions.Add(i);
+			}
+		}
+		return directions;
+	}
 
     public int GetConnectionDirection(List<int> possibleDirections)
     {
@@ -136,6 +122,16 @@ public class Room
         }
         return -1;
     }
+}
+
+public class RoomInformation
+{
+	public string RoomName;
+	public int EnemyId;
+	public Chest RoomChest;
+	public bool Exit = false;
+	public bool Entrance = false;
+	public Vector2 Position;
 }
 
 public static class RoomNameGenerator

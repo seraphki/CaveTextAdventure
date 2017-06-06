@@ -3,6 +3,7 @@
 public class PlayerController : MonoSingleton<PlayerController>
 {
     private int _health;
+	private int _maxHealth;
 
     private int _strength = 5;
     public int Strength
@@ -15,17 +16,23 @@ public class PlayerController : MonoSingleton<PlayerController>
         LoadPlayerInfo();
     }
 
-    public void Hit(int strength)
+    public void AttackPlayer(int strength, string attackerName)
     {
-        UIController.Instance.TextOutputUpdate("You've been hit for " + strength + "!");
         _health = Mathf.Max(0, _health - strength);
-        UIController.Instance.TextOutputUpdate("You have " + _health + " health remaining.");
+
     }
+
+	public void Heal(int amount)
+	{
+		_health = Mathf.Min(_maxHealth, _health + amount);
+		MessageManager.Instance.SendPlayerHealedMessage(amount, _health);
+	}
 
     private void LoadPlayerInfo()
     {
         //load from save file
 
         _health = 100;
+		_maxHealth = 100;
     }
 }

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Events;
 
 public class BattleManager : MonoSingleton<BattleManager>
 {
@@ -19,14 +20,13 @@ public class BattleManager : MonoSingleton<BattleManager>
 
     public void StartBattle()
     {
-        UIController.Instance.TextOutputNewLine();
-        UIController.Instance.TextOutputUpdate("You've begun a battle with " + _enemyData.Name + "!");
+		MessageManager.Instance.SendBeginBattleMessage(_enemyData.Name);
         UIController.Instance.SwitchToBattleMenu(_enemyData.Name);
     }
 
     public void DoAction(string action, string target)
     {
-        UIController.Instance.TextOutputNewLine();
+        UIController.Instance.NewLine();
         Debug.Log("Doing action " + action + ", " + target + "(" + _enemyData.Name + ")");
 
         //Check for Base Interactions
@@ -43,10 +43,7 @@ public class BattleManager : MonoSingleton<BattleManager>
             {
                 if (string.IsNullOrEmpty(interaction.Target) || Helpers.StringLooseCompare(target, interaction.Target))
                 {
-                    string targetName = string.IsNullOrEmpty(interaction.Target) || Helpers.StringLooseCompare(target, interaction.Target) ?
-                        _enemyData.Name : _enemyData.Name + " in the " + interaction.Target;
-
-                    UIController.Instance.TextOutputUpdate("You " + interaction.Action + " the " + targetName);
+					MessageManager.Instance.SendActionMessage(interaction.Action.ToString(), interaction.Target, _enemyData.Name);
                     ExecuteOutcome(interaction.Outcome);
                 }
             }
@@ -66,8 +63,8 @@ public class BattleManager : MonoSingleton<BattleManager>
 
         if (_enemyHealth > 0)
         {
-            //Enemy Retaliates
-            EnemyAttack();
+			//Enemy Retaliates
+			GameController.Instance.AddActionToQueue(new UnityAction(EnemyAttack));
         }
     }
 
@@ -94,7 +91,7 @@ public class BattleManager : MonoSingleton<BattleManager>
         //Message
         if (!string.IsNullOrEmpty(outcome.Message))
         {
-            UIController.Instance.TextOutputUpdate(outcome.Message);
+			MessageManager.Instance.SendOutcomeMessage(outcome.Message);
         }
     }
 
@@ -102,28 +99,23 @@ public class BattleManager : MonoSingleton<BattleManager>
     {
         int healthLost = Mathf.CeilToInt(PlayerController.Instance.Strength * powerModifier);
         _enemyHealth -= healthLost;
-        UIController.Instance.TextOutputUpdate("You hit the " + _enemyData.Name + " for " + healthLost + "!");
 
-        if (_enemyHealth <= 0)
+		MessageManager.Instance.SendPlayerAttackedMessage(_enemyData.Name, healthLost, (_enemyHealth < _enemyData.Health * 0.25f));
+
+		if (_enemyHealth <= 0)
         {
             BattleWon();
-        }
-        else if (_enemyHealth < _enemyData.Health * 0.2f)
-        {
-            UIController.Instance.TextOutputUpdate("The " + _enemyData.Name + " is severely wounded");
         }
     }
 
     private void EnemyAttack()
     {
-        UIController.Instance.TextOutputNewLine();
-        UIController.Instance.TextOutputUpdate("The " + _enemyData.Name + " is preparing to attack!");
-        PlayerController.Instance.Hit(_enemyData.Strength);
+        PlayerController.Instance.AttackPlayer(_enemyData.Strength, _enemyData.Name);
     }
 
     private void BattleWon()
     {
-        UIController.Instance.TextOutputUpdate("You defeated the " + _enemyData.Name + "!");
+		MessageManager.Instance.SendBattleWonMessage(_enemyData.Name, _enemyData.PrizeMessage);
         
         if (_enemyData.CoinPrize > 0)
         {
@@ -135,14 +127,9 @@ public class BattleManager : MonoSingleton<BattleManager>
             InventoryManager.Instance.AddItem(_enemyData.ItemPrize, 1);
         }
 
-        if (!string.IsNullOrEmpty(_enemyData.PrizeMessage))
-        {
-            UIController.Instance.TextOutputUpdate(_enemyData.PrizeMessage);
-        }
-
         UIController.Instance.SwitchToExploreMenu();
         CaveManager.Instance.GetCurrentRoom().EnemyId = 0;
         CaveManager.Instance.GetCurrentRoom().Look();
-        UIController.Instance.TextOutputNewLine();
+        UIController.Instance.NewLine();
     }
 }

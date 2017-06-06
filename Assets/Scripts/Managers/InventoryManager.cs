@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public class InventoryManager : MonoSingleton<InventoryManager>
 {
@@ -7,27 +8,38 @@ public class InventoryManager : MonoSingleton<InventoryManager>
 
     private int _coins = 0;
 
+	void Awake()
+	{
+		_itemsOwned = new Dictionary<int, int>();
+	}
+
     void Start()
     {
-        PopulateItemList();
         LoadItems();
     }
     
     #region PublicMethods
 
-    public void AddItem(int itemId, int count)
+	public int[] GetOwnedItemIds()
+	{
+		return _itemsOwned.Keys.ToArray();
+	}
+
+	public int GetItemAmountOwned(int itemId)
+	{
+		return _itemsOwned[itemId];
+	}
+
+    public void AddItem(int itemId, int count = 1)
     {
         if (_itemsOwned.ContainsKey(itemId))
-        {
             _itemsOwned[itemId] += count;
-            ItemData item = ItemLibrary.Instance.GetItemData(itemId);
-            UIController.Instance.TextOutputUpdate("A " + item.Name + " was added to your inventory.");
-        }
-        else
-        {
-            Debug.LogWarning("ITEM ID NOT FOUND: " + itemId);
-        }
-    }
+		else
+			_itemsOwned.Add(itemId, count);
+        
+		ItemData item = ItemLibrary.Instance.GetItemData(itemId);
+		MessageManager.Instance.SendItemAddedMessage(item.Name, _itemsOwned[itemId]);
+	}
 
     public void UseItem(int itemId)
     {
@@ -35,7 +47,15 @@ public class InventoryManager : MonoSingleton<InventoryManager>
         {
             if (_itemsOwned[itemId] >= 0)
             {
-                //Use Item
+				ItemData data = ItemLibrary.Instance.GetItemData(itemId);
+				MessageManager.Instance.SendItemUsedMessage(data.Name);
+				
+				if (data.HealthRestored != 0)
+				{
+					PlayerController.Instance.Heal(data.HealthRestored);
+				}
+
+				_itemsOwned[itemId] -= 1;
             }
         }
         else
@@ -47,8 +67,7 @@ public class InventoryManager : MonoSingleton<InventoryManager>
     public void AddCoins(int coins)
     {
         _coins += coins;
-        string text = coins + " coins were added to your inventory.\nYou now have " + _coins + " coins.";
-        UIController.Instance.TextOutputUpdate(text);
+		MessageManager.Instance.SendCoinsAddedMessage(coins, _coins);
     }
 
     public void RemoveCoins(int coins)
@@ -59,16 +78,6 @@ public class InventoryManager : MonoSingleton<InventoryManager>
     #endregion
 
     #region Private Methods
-
-    private void PopulateItemList()
-    {
-        _itemsOwned = new Dictionary<int, int>();
-        int[] itemList = ItemLibrary.Instance.GetAllItemIds();
-        for (int i = 0; i < itemList.Length; i++)
-        {
-            _itemsOwned.Add(itemList[i], 0);
-        }
-    }
 
     private void LoadItems()
     {

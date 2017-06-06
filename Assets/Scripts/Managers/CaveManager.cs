@@ -29,9 +29,9 @@ public class CaveManager : MonoSingleton<CaveManager>
         LoadCave();
 
         _location = new Location(0, 0);
-        UIController.Instance.TextOutputUpdate("You have entered the cave.");
-        GetCurrentRoom().Enter();
-    }
+        GetCurrentRoom().Enter(-1);
+		InventoryManager.Instance.AddItem(1);
+	}
 
     #region Public Methods
 
@@ -48,13 +48,13 @@ public class CaveManager : MonoSingleton<CaveManager>
 
     public void Move(int direction)
     {
-        UIController.Instance.TextOutputNewLine();
-        Advance((int)direction);
+        UIController.Instance.NewLine();
+        Advance(direction);
     }
 
     public void MoveLevel(int direction)
     {
-        UIController.Instance.TextOutputNewLine();
+        UIController.Instance.NewLine();
         AdvanceLevel(direction);
     }
 
@@ -98,12 +98,11 @@ public class CaveManager : MonoSingleton<CaveManager>
         {
             _location.RoomId = connectingRoom;
             Room newRoom = GetCurrentRoom();
-            UIController.Instance.TextOutputUpdate("You went " + ((Direction)direction).ToString() + " into the next room: " + newRoom.RoomName);
-            newRoom.Enter();
+            newRoom.Enter(direction);
         }
         else
         {
-            UIController.Instance.TextOutputUpdate("There are no rooms in that direction.");
+			MessageManager.Instance.SendNoRoomMessage();
         }
     }
 
@@ -115,16 +114,16 @@ public class CaveManager : MonoSingleton<CaveManager>
         if (_location.LevelId > _cave.Levels.Length - 1)
         {
             UIController.Instance.DisableInteractionButtons();
-            UIController.Instance.TextOutputUpdate("You've reached the end of the cave");
+			MessageManager.Instance.SendEndOfCaveMessage();
         }
         else if (_location.LevelId < 0)
         {
             UIController.Instance.DisableInteractionButtons();
-            UIController.Instance.TextOutputUpdate("You've left the cave");
+			MessageManager.Instance.SendLeftCaveMessage();
         }
         else
         {
-            GetCurrentRoom().Enter();
+            GetCurrentRoom().Enter(-1);
         }
     }
 
