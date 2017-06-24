@@ -1,35 +1,41 @@
 ﻿using UnityEngine;
+using System.Linq;
 using System.Collections.Generic;
 
 public class Level
 {
-    public Room[] Rooms;
+    public LevelData StaticData;
 
-    private int _level;
+    private Room[] _rooms;
     private int _exitPoint;
+    private float _roomDataRate;
     private List<Vector2> _roomPositions;
 
-    public Level(int level, int roomCount)
+    public Level(int level)
     {
-        _level = level;
-        GenerateLevel(roomCount);
+        StaticData = LevelDatabase.GetLevelByIndex(level);
+        GenerateMap(StaticData.RoomCount);
     }
 
-    private void GenerateLevel(int roomCount)
+    public Room GetRoom(int index)
     {
-        //TODO: Optimize checking for overlaps
+        if (index < _rooms.Length)
+            return _rooms[index];
 
-        Rooms = new Room[roomCount];
-        
-        //Generate all rooms
+        return null;
+    }
+
+    private void GenerateMap(int roomCount)
+    {
+        _rooms = new Room[roomCount];
         for (int i = 0; i < roomCount; i++)
         {
-            Rooms[i] = new Room(_level);
+            _rooms[i] = new Room();
         }
 
         //Create network
         Queue<int> roomsToBeConneted = new Queue<int>();
-        for (int i = 1; i < Rooms.Length; i++)
+        for (int i = 1; i < _rooms.Length; i++)
             roomsToBeConneted.Enqueue(i);
 
         Stack<int> connectedRooms = new Stack<int>();
@@ -37,7 +43,7 @@ public class Level
         List<int> roomsToConnect = new List<int>() { 0 };
         _roomPositions = new List<Vector2>();
         _roomPositions.Add(Vector2.zero);
-        Rooms[0].Entrance = true;
+        _rooms[0].Entrance = true;
 
         while (roomsToBeConneted.Count > 0)
         {
@@ -45,7 +51,7 @@ public class Level
             int nextRoomIndex = Random.Range(0, roomsToConnect.Count);
             int roomIndex = roomsToConnect[nextRoomIndex];
             roomsToConnect.RemoveAt(nextRoomIndex);
-            Room currentRoom = Rooms[roomIndex];
+            Room currentRoom = _rooms[roomIndex];
 
             //Create Connections - I want a max of 3 (including "entrance")
             int connections = Random.Range(1, 3);
@@ -64,18 +70,15 @@ public class Level
 
                         int connectingRoom = roomsToBeConneted.Dequeue();
                         currentRoom.AddConnectingRoom(direction, connectingRoom);
-                        Rooms[connectingRoom].AddConnectingRoom((direction + 2) % 4, roomIndex);
+                        _rooms[connectingRoom].AddConnectingRoom((direction + 2) % 4, roomIndex);
 
                         //Set position of newly connected room
                         Vector2 position = currentRoom.Position + VectorFromDirection(direction);
-                        Rooms[connectingRoom].Position = position;
+                        _rooms[connectingRoom].Position = position;
                         _roomPositions.Add(position);
 
                         //Add connected room to queue for connection
                         roomsToConnect.Add(connectingRoom);
-
-                        //Debug.Log("Connecting " + roomIndex + " to " + connectingRoom + " to the " + ((Direction)direction).ToString());
-                        //Debug.Log("Connecting " + connectingRoom + " to " + roomIndex + " to the " + ((Direction)((direction + 2) % 4)).ToString());
                     }
 
                     if (!connected)
@@ -87,36 +90,55 @@ public class Level
             }
         }
 
-        //Now that all the rooms are connected, generate conent in end points
+        //Get Endpoints
         Stack<int> endCaps = new Stack<int>();
-        for (int i = 1; i < Rooms.Length; i++)
+        for (int i = 1; i < _rooms.Length; i++)
         {
-            if (Rooms[i].Connections <= 1)
+            if (_rooms[i].Connections <= 1)
             {
                 endCaps.Push(i);
             }
         }
-        Debug.Log("Endcaps: " + endCaps.Count);
+
+        //TODO: If user wants random content, put in endcaps
 
         //Last end cap is the exit point
         _exitPoint = endCaps.Pop();
-        Rooms[_exitPoint].Exit = true;
+        _rooms[_exitPoint].StaticData = RoomDatabase.GetFillerRoom();
+        _rooms[_exitPoint].Exit = true;
 
-        //Generate items and enemies
-        while (endCaps.Count > 0)
+        //Fill start point
+        _rooms[0].StaticData = RoomDatabase.GetFillerRoom();
+
+        //Fill in data
+        List<string> roomDataIndicies = StaticData.RoomIds.ToList();
+        List<int> roomIndecies = new List<int>();
+        for (int i = 1; i < roomCount; i++)
         {
-            int roomId = endCaps.Pop();
-            if (Random.Range(0f, 1f) < 0.5f)
-            {
-                Debug.Log("Adding enemy to room " + roomId);
-                Rooms[roomId].GenerateEnemy();
-            }
-            else
-            {
-                Debug.Log("Adding chest to room " + roomId);
-                Rooms[roomId].GenerateChest();
-            }
+            if (i != _exitPoint)
+                roomIndecies.Add(i);
         }
+
+        Debug.Log("Start Level Population");
+        while (roomIndecies.Count > 0)
+        {
+            int i = Random.Range(0, roomIndecies.Count);
+            int roomIndex = roomIndecies[i];
+            roomIndecies.Remove(roomIndex);
+
+            Debug.Log("Populating room " + roomIndex);
+
+            string roomId = null;
+            if (roomDataIndicies.Count > 0)
+            {
+                int index = Random.Range(0, roomDataIndicies.Count);
+                roomId = roomDataIndicies[index];
+                roomDataIndicies.Remove(roomId);
+            }
+
+            _rooms[roomIndex].StaticData = roomId == null ? RoomDatabase.GetFillerRoom() : RoomDatabase.GetRoomData(roomId);
+        }
+        Debug.Log("End level population");
     }
 
     private Vector2 VectorFromDirection(int direction)
@@ -133,7 +155,6 @@ public class Level
 
     private List<int> GetPossibleDirections(Vector2 position)
     {
-        //TODO: Check in on making this more efficient
         List<int> possibleDirections = new List<int>();
         for (int i = 0; i < 4; i++)
         {
