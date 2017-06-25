@@ -25,14 +25,28 @@ public class WorldManager
 
     public void EnterWorld()
     {
-        Room room = GetCurrentRoom();
-        if (room != null)
+        //Send World Enter Message
+        MessageManager.SendStringMessage(_world.StaticData.StartMessage);
+        
+        Level level = GetCurrentLevel();
+        if (level != null)
         {
-            room.Enter(-1);
+            //Send Level Enter Message
+            MessageManager.SendStringMessage(level.StaticData.StartMessage);
+
+            Room room = GetCurrentRoom();
+            if (room != null)
+            {
+                room.Enter(-1);
+            }
+            else
+            {
+                Debug.LogWarning("Room information Missing!");
+            }
         }
         else
         {
-            Debug.LogWarning("Room or Level information Missing!");
+            Debug.LogWarning("Level information Missing!");
         }
     }
 
@@ -71,6 +85,17 @@ public class WorldManager
     public void MoveLevel(int direction)
     {
         AdvanceLevel(direction);
+    }
+
+    public Level GetCurrentLevel()
+    {
+        Level level = _world.GetLevel(_location.LevelId);
+        if (level != null)
+        {
+            return level;
+        }
+
+        return null;
     }
 
     public Room GetCurrentRoom()

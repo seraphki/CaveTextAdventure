@@ -65,7 +65,7 @@ public class ObstacleData : IEditable
     public string Description;
     public int Health;
     public int Strength;
-    public string[] InteractionIds;
+    public Interaction[] Interactions;
     public Outcome CompletedOutcome;
 }
 

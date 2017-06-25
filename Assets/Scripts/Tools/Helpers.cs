@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+using System;
 using System.IO;
+using System.Linq;
 
 public static class Helpers
 {
@@ -15,6 +17,25 @@ public static class Helpers
             return File.ReadAllText(path);
 
         return "";
+    }
+
+    public static void CreateAllGameFiles()
+    {
+        if (!Directory.Exists(GameInfo.CurrentGamePath))
+            Directory.CreateDirectory(GameInfo.CurrentGamePath);
+
+        InformationSet[] infoSets = Enum.GetValues(typeof(InformationSet)).Cast<InformationSet>().ToArray();
+        for (int i = 0; i < infoSets.Length; i++)
+        {
+            string path = GetPathFromInformationSet(infoSets[i]);
+            if (!File.Exists(path))
+            {
+                Type type = GetTypeFromInformationSet(infoSets[i]);
+                object data = Activator.CreateInstance(type);
+                string json = JsonUtility.ToJson(data);
+                SaveGameFile(json, infoSets[i]);
+            }
+        }
     }
 
     public static bool SaveGameFile(string json, InformationSet informationSet)
@@ -35,6 +56,7 @@ public static class Helpers
         }       
     }
 
+
     public static string GetPathFromInformationSet(InformationSet infoSet)
     {
         switch (infoSet)
@@ -53,5 +75,25 @@ public static class Helpers
                 return GameInfo.ItemDataPath;
         }
         return "";
+    }
+
+    public static Type GetTypeFromInformationSet(InformationSet infoSet)
+    {
+        switch (infoSet)
+        {
+            case InformationSet.WorldInformation:
+                return typeof(WorldData);
+            case InformationSet.LevelInformation:
+                return typeof(LevelArray);
+            case InformationSet.RoomInformation:
+                return typeof(RoomArray);
+            case InformationSet.InteractableInformation:
+                return typeof(InteractableArray);
+            case InformationSet.ObstacleInformation:
+                return typeof(ObstacleArray);
+            case InformationSet.ItemInformation:
+                return typeof(ItemArray);
+        }
+        return null;
     }
 }

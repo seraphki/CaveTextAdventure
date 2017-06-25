@@ -13,12 +13,14 @@ public class MainMenuController : MonoBehaviour
     public Button EditButton;
 
     [Header("Create New Game")]
+    public InputField NewGameInput;
     public Button CreateNewButton;
 
     private List<string> _directories;
 
     private void Awake()
     {
+        //Populate Directories Path
         string path = GameInfo.GamesPath;
         _directories = Directory.GetDirectories(path).ToList();
         List<Dropdown.OptionData> options = new List<Dropdown.OptionData>();
@@ -29,11 +31,13 @@ public class MainMenuController : MonoBehaviour
         }
         GameDropdown.AddOptions(options);
 
+        //If there are games, enable play and edit buttons
         if (_directories.Count > 0)
         {
             PlayButton.interactable = true;
             EditButton.interactable = true;
         }
+        
     }
 
     public void PlayButtonClicked()
@@ -46,5 +50,21 @@ public class MainMenuController : MonoBehaviour
     {
         GameInfo.SetCurrentGame(GameDropdown.options[GameDropdown.value].text);
         SceneManager.LoadScene("CartridgeCreator");
+    }
+    
+    public void CreateNewGame()
+    {
+        string gameName = NewGameInput.text;
+
+        //TODO: Much better string validation than this
+        gameName = gameName.Replace(@"\", string.Empty);
+        gameName = gameName.Replace(@"/", string.Empty);
+
+        if (!string.IsNullOrEmpty(gameName))
+        {
+            GameInfo.SetCurrentGame(gameName);
+            Helpers.CreateAllGameFiles();
+            SceneManager.LoadScene("CartridgeCreator");
+        }
     }
 }

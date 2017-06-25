@@ -34,18 +34,18 @@ public class ObstacleManager
             LandHit();
         }
 
-        for (int i = 0; i < _obstacleData.InteractionIds.Length; i++)
-        {
-            //Interaction interaction = _obstacleData.EnemyInteractions[i];
-     //       if (action.Trim().ToLower() == interaction.Action.ToString().ToLower())
-     //       {
-     //           if (string.IsNullOrEmpty(interaction.Target) || Helpers.StringLooseCompare(target, interaction.Target))
-     //           {
-					//MessageManager.SendActionMessage(interaction.Action.ToString(), interaction.Target, _obstacleData.Name);
-     //               ExecuteOutcome(interaction.InteractionOutcome);
-     //           }
-     //       }
-        }
+        //for (int i = 0; i < _obstacleData.InteractionIds.Length; i++)
+        //{
+        //    Interaction interaction = _obstacleData.EnemyInteractions[i];
+        //    if (action.Trim().ToLower() == interaction.Action.ToString().ToLower())
+        //    {
+        //        if (string.IsNullOrEmpty(interaction.Target) || Helpers.StringLooseCompare(target, interaction.Target))
+        //        {
+        //            MessageManager.SendActionMessage(interaction.Action.ToString(), interaction.Target, _obstacleData.Name);
+        //            ExecuteOutcome(interaction.InteractionOutcome);
+        //        }
+        //    }
+        //}
 
         if (_obstacleHealth > 0)
         {

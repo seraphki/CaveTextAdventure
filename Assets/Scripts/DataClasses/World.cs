@@ -1,6 +1,6 @@
 ﻿public class World
 {
-    private WorldData _worldData;
+    public WorldData StaticData;
     private Level[] _worldLevels;
 
     public int LevelCount
@@ -13,7 +13,7 @@
 
     public World()
     {
-        _worldData = WorldDatabase.GetWorldData();
+        StaticData = WorldDatabase.GetWorldData();
         _worldLevels = new Level[LevelDatabase.LevelCount];
         for (int i = 0; i < _worldLevels.Length; i++)
         {
