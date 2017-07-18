@@ -9,8 +9,7 @@ public class Room
     public bool Entrance = false;
     public Vector2 Position;
 	public int LastEnteredDirection;
-
-    private string _obstacleId = null;
+    
     private int[] _connectedRooms;
 
     private bool _visited = false;
@@ -58,41 +57,34 @@ public class Room
 
     public bool SubmitAction(string action, string target)
     {
-        Debug.Log("Action submitted. " + action + " " + target);
+        bool actionExecuted = false;
 
         //Check obstacle
         if (ObstacleController.Instance.ObstaclePresent())
-        { 
-            ObstacleData data = ObstacleDatabase.GetObstacleData(StaticData.ObstacleId);
-            for (int j = 0; j < data.Interactions.Length; j++)
-            {
-                Interaction interaction = data.Interactions[j];
-                if ((Helpers.LooseCompare(target, interaction.Target) || Helpers.LooseCompare(target, data.Name)) && Helpers.LooseCompare(action, interaction.Action))
-                {
-                    interaction.ExecuteInteractionOutcome();
-                    return true;
-                }
-            }
-        }
-
-
-        //Check through interactables
-        for (int i = 0; i < StaticData.InteractableIds.Length; i++)
         {
-            string interactableId = StaticData.InteractableIds[i];
-            InteractableData data = InteractableDatabase.GetInteractableData(interactableId);
-            for (int j = 0; j < data.Interactions.Length; j++)
+            actionExecuted = ObstacleController.Instance.SubmitObstacleAction(action, target);
+        }
+
+        if (!actionExecuted)
+        {
+            //Check through interactables
+            for (int i = 0; i < StaticData.InteractableIds.Length; i++)
             {
-                Interaction interaction = data.Interactions[j];
-                if ((Helpers.LooseCompare(target, interaction.Target) || Helpers.LooseCompare(target, data.Name)) && Helpers.LooseCompare(action, interaction.Action))
+                string interactableId = StaticData.InteractableIds[i];
+                InteractableData data = InteractableDatabase.GetInteractableData(interactableId);
+                for (int j = 0; j < data.Interactions.Length; j++)
                 {
-                    interaction.ExecuteInteractionOutcome();
-                    return true;
+                    Interaction interaction = data.Interactions[j];
+                    if ((Helpers.LooseCompare(target, interaction.Target) || Helpers.LooseCompare(target, data.Name)) && Helpers.LooseCompare(action, interaction.Action))
+                    {
+                        interaction.ExecuteInteractionOutcome();
+                        actionExecuted = true;
+                    }
                 }
             }
         }
 
-        return false;
+        return actionExecuted;
     }
 
     public bool SubmitExamineAction(string target)
@@ -113,7 +105,7 @@ public class Room
 
     public void Look()
     {
-        Debug.Log("Look");
+        Debug.Log("Look: " + StaticData.Description);
         MessageManager.SendStringMessage(StaticData.Description);
     }
 

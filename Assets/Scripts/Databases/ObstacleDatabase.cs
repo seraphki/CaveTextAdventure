@@ -32,8 +32,8 @@ public static class ObstacleDatabase
         {
             for (int i = 0; i < obstacleArray.Obstacles.Length; i++)
             {
-                ObstacleData enemy = obstacleArray.Obstacles[i];
-                _obstacles.Add(enemy.ObstacleId, enemy);
+                ObstacleData obstacle = obstacleArray.Obstacles[i];
+                _obstacles.Add(obstacle.ObstacleId, obstacle);
             }
             return true;
         }
@@ -51,9 +51,18 @@ public static class ObstacleDatabase
         return _obstacles.Keys.ToArray();
     }
 
-    public static ObstacleData GetObstacleData(string enemyId)
+    public static ObstacleData GetObstacleData(string obstacleId)
     {
-        return _obstacles[enemyId];
+        if (obstacleId != null && _obstacles.ContainsKey(obstacleId))
+        {
+            return _obstacles[obstacleId];
+        }
+        else
+        {
+            Debug.LogWarning("Obstacle " + obstacleId + " not found in Obstacle Database");
+        }
+
+        return null;
     }
 }
 

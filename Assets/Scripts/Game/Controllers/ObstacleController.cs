@@ -2,7 +2,7 @@
 
 public class ObstacleController : MonoSingleton<ObstacleController>
 {
-    private string _obstacleId;
+    private string _obstacleId = "";
     private int _health = 0;
 
     public void SetObstacle(string obstacleId)
@@ -47,5 +47,20 @@ public class ObstacleController : MonoSingleton<ObstacleController>
     public bool ObstaclePresent()
     {
         return (!string.IsNullOrEmpty(_obstacleId) && _health > 0);
+    }
+
+    public bool SubmitObstacleAction(string action, string target)
+    {
+        ObstacleData data = ObstacleDatabase.GetObstacleData(_obstacleId);
+        for (int j = 0; j < data.Interactions.Length; j++)
+        {
+            Interaction interaction = data.Interactions[j];
+            if ((Helpers.LooseCompare(target, interaction.Target) || Helpers.LooseCompare(target, data.Name)) && Helpers.LooseCompare(action, interaction.Action))
+            {
+                interaction.ExecuteInteractionOutcome();
+                return true;
+            }
+        }
+        return false;
     }
 }
