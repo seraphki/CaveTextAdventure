@@ -4,6 +4,8 @@ public class WorldManager
 {
     private World _world;
 
+    private bool _blockedByObstacle = false;
+
     private Location _location;
     public struct Location
     {
@@ -54,6 +56,7 @@ public class WorldManager
 
     public void SubmitAction(string action, string target)
     {
+        bool actionTaken = false;
         if (Helpers.LooseCompare(action, "go"))
         {
             //Movement Actions
@@ -68,7 +71,13 @@ public class WorldManager
         else
         {
             //Send action to Room
-            GetCurrentRoom().SubmitAction(action, target);
+            actionTaken = GetCurrentRoom().SubmitAction(action, target);
+        }
+
+        if (actionTaken)
+        {
+            //If there are obstacles, execute their actions
+            ObstacleController.Instance.ExeuteObstacleActions();
         }
     }
 
@@ -77,14 +86,32 @@ public class WorldManager
         GetCurrentRoom().Look();
     }
 
-    public void Move(int direction)
+    public bool Move(int direction)
     {
-        Advance(direction);
+        if (!_blockedByObstacle)
+        {
+            return Advance(direction);
+        }
+        else
+        {
+            MessageManager.SendBlockedByObstacleMessage();
+        }
+
+        return false;
     }
 
-    public void MoveLevel(int direction)
+    public bool MoveLevel(int direction)
     {
-        AdvanceLevel(direction);
+        if (!_blockedByObstacle)
+        {
+            return AdvanceLevel(direction);
+        }
+        else
+        {
+            MessageManager.SendBlockedByObstacleMessage();
+        }
+
+        return false;
     }
 
     public Level GetCurrentLevel()
@@ -112,11 +139,16 @@ public class WorldManager
         return null;
     }
 
+    public void SetObstacleBlock(bool blocked)
+    {
+        _blockedByObstacle = blocked;
+    }
+
     #endregion
 
     #region Private Methods
 
-    private void Advance(int direction)
+    private bool Advance(int direction)
     {
         Level level = _world.GetLevel(_location.LevelId);
         Room room = level.GetRoom(_location.RoomId);
@@ -127,30 +159,36 @@ public class WorldManager
             _location.RoomId = connectingRoom;
             Room newRoom = GetCurrentRoom();
             newRoom.Enter(direction);
+            return true;
         }
         else
         {
 			MessageManager.SendNoRoomMessage();
         }
+
+        return false;
     }
 
-    private void AdvanceLevel(int direction)
+    private bool AdvanceLevel(int direction)
     {
         _location.LevelId += direction;
         _location.RoomId = 0;
 
         if (_location.LevelId > _world.LevelCount - 1)
         {
-			MessageManager.SendEndOfCaveMessage();
+            MessageManager.SendStringMessage(_world.StaticData.EndMessage);
+            //TODO: End Game
         }
         else if (_location.LevelId < 0)
         {
-			MessageManager.SendLeftCaveMessage();
+			//TODO: Prevent
         }
         else
         {
             GetCurrentRoom().Enter(-1);
         }
+
+        return true;
     }
 
     #endregion

@@ -2,8 +2,6 @@
 
 public static class WorldDatabase
 {
-    public static bool DataExists = false;
-
     private static WorldData _worldData;
     private static WorldData _world
     {
@@ -38,6 +36,5 @@ public class WorldData : IEditable
     public string WorldName;
     public string StartMessage;
     public string EndMessage;
-    public string LevelNoun;
     public bool ProgressDown = true;
 }

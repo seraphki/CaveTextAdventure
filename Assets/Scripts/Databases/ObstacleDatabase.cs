@@ -62,10 +62,11 @@ public class ObstacleData : IEditable
 {
     public string ObstacleId;
     public string Name;
-    public string Description;
+    public string EncounterMessage;
     public int Health;
     public int Strength;
     public Interaction[] Interactions;
+    public Outcome[] ObstacleActions;
     public Outcome CompletedOutcome;
 }
 

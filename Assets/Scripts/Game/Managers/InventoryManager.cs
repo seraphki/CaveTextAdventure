@@ -50,34 +50,20 @@ public class InventoryManager
     {
         if (_itemsOwned.ContainsKey(itemId))
         {
-    //        if (_itemsOwned[itemId] >= 0)
-    //        {
-				//ItemData data = ItemDatabase.GetItemData(itemId);
-				//MessageManager.SendItemUsedMessage(data.Name);
-				
-				//if (data.HealthRestored != 0)
-				//{
-				//	PlayerController.Instance.ModifyHealth(data.HealthRestored);
-				//}
+            if (_itemsOwned[itemId] >= 0)
+            {
+                _itemsOwned[itemId] -= 1;
+                ItemData data = ItemDatabase.GetItemData(itemId);
 
-				//_itemsOwned[itemId] -= 1;
-    //        }
+                MessageManager.SendItemUsedMessage(data.Name, _itemsOwned[itemId]);
+
+                data.UseOutcome.ExecuteOutcome();
+            }
         }
         else
         {
             Debug.LogWarning("ITEM ID NOT FOUND: " + itemId);
         }
-    }
-
-    public void AddCoins(int coins)
-    {
-        _coins += coins;
-		MessageManager.SendCoinsAddedMessage(coins, _coins);
-    }
-
-    public void RemoveCoins(int coins)
-    {
-        _coins = Mathf.Max(0, _coins - coins);
     }
 
     #endregion

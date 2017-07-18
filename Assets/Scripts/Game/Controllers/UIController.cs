@@ -75,7 +75,7 @@ public class UIController : MonoSingleton<UIController>
 
     public void TextOutputUpdate(string text)
     {
-        _textQueue += "\n" + text;
+        _textQueue += "\n" + text + "\n";
     }
 
     #endregion

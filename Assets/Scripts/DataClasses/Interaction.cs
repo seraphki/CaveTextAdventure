@@ -41,7 +41,7 @@ public class Outcome : IEditable
         //Message
         if (!string.IsNullOrEmpty(Message))
         {
-            MessageManager.SendOutcomeMessage(Message);
+            MessageManager.SendStringMessage(Message);
         }
 
         //Add Items
@@ -60,6 +60,11 @@ public class Outcome : IEditable
         if (HealthDifference != 0)
         {
             PlayerController.Instance.ModifyHealth(HealthDifference);
+        }
+
+        if (Damage != 0)
+        {
+            ObstacleController.Instance.DamageObstacle(Damage);
         }
     }
 }

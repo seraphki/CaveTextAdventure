@@ -4,35 +4,36 @@ using UnityEngine.UI;
 public class InformationGridEntry : MonoBehaviour
 {
     public Text Label;
+
+    [Header("Info Item Stuff")]
     public Button DeleteButton;
 
-    public virtual void Setup(string label)
+    [Header("Array Stuff")]
+    public Button AddElementButton;
+    public Button ExpandContractButton;
+    public Transform Container;
+
+    private bool _expanded = true;
+    private Text _expandContractButtonText;
+
+    private void Awake()
     {
-        Label.text = label;
+        if (ExpandContractButton != null)
+        {
+            _expandContractButtonText = ExpandContractButton.GetComponentInChildren<Text>();
+            ExpandContractButton.onClick.AddListener(ToggleContainer);
+        }
     }
 
-    public virtual void UpdateInput(object obj)
+    public void ToggleContainer()
     {
-
+        SetContainerToggle(!_expanded);
     }
 
-    public virtual void UpdateInput(string data)
+    public void SetContainerToggle(bool toggle)
     {
-        //To be overridden by child
-    }
-
-    public virtual void UpdateInput(int data)
-    {
-        //To be overridden by child
-    }
-
-    public virtual void UpdateInput(bool data)
-    {
-        //To be overridden by child
-    }
-
-    public virtual object GetValue()
-    {
-        return null;
+        _expanded = toggle;
+        _expandContractButtonText.text = _expanded ? "Hide" : "Show";
+        Container.gameObject.SetActive(_expanded);
     }
 }

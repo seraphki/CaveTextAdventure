@@ -101,9 +101,9 @@ public class RoomData : IEditable
 {
     public string RoomId;
     public string Name;
-    public string StartMessage;
+    public string Description;
+    public string ObstacleId;
     public string[] InteractableIds;
-    public string[] ObstacleIds;
 }
 
 [System.Serializable]

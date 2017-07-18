@@ -7,13 +7,24 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Events;
 
-public enum InformationSet { WorldInformation, LevelInformation, RoomInformation, InteractableInformation, ObstacleInformation, ItemInformation }
+public enum InformationSet { WorldInformation, LevelInformation, RoomInformation, InteractableInformation, ObstacleInformation, ItemInformation, MessageInformation, NameGeneration }
 public class CartridgeCreatorController : MonoBehaviour
 {
-    [Header("UI Hookup")]
-    public Transform InfoContent;
+    [Header("General UI Hookup")]
     public Dropdown InformationSetType;
     public Text MessageUI;
+
+    [Header("Data Editor UI Hookup")]
+    public Transform InfoContent;
+
+    [Header("Name Generator UI Hookup")]
+    public InputField RoomNounInput;
+    public InputField NounInput;
+    public InputField VerbInput;
+
+    [Header("UI Groups")]
+    public CanvasGroup DataEditor;
+    public CanvasGroup RoomGenerationEditor;
 
     [Header("Prefabs")]
     public GameObject ArrayEntryPrefab;
@@ -25,6 +36,8 @@ public class CartridgeCreatorController : MonoBehaviour
     private List<Type> _supportedTypes;
     private InformationSet _currentInformationSet = InformationSet.WorldInformation;
     private object _rootObject;
+
+    //TODO: Implement. Warn user if they change data without saving
     private bool _dirty = false;
 
 
@@ -63,7 +76,17 @@ public class CartridgeCreatorController : MonoBehaviour
         MessageUI.text = "";
         string value = InformationSetType.options[InformationSetType.value].text;
         _currentInformationSet = (InformationSet)Enum.Parse(typeof(InformationSet), value);
-        PopulateFromJson();
+
+        if (_currentInformationSet == InformationSet.NameGeneration)
+        {
+            ShowNameGenerationEditor();
+            PopulateNameGenerationFromFile();
+        }
+        else
+        {
+            ShowDataEditor();
+            PopulateFromJson();
+        }
     }
 
     /// <summary>
@@ -71,8 +94,20 @@ public class CartridgeCreatorController : MonoBehaviour
     /// </summary>
     public void SaveData()
     {
-        string json = JsonUtility.ToJson(_rootObject);
-        bool success = Helpers.SaveGameFile(json, _currentInformationSet);
+        bool success = false;
+        if (_currentInformationSet == InformationSet.NameGeneration)
+        {
+            bool roomNounSave = Helpers.SaveNameGenerationFile(RoomNounInput.text, NameGenerationStringType.RoomNoun);
+            bool nounSave = Helpers.SaveNameGenerationFile(NounInput.text, NameGenerationStringType.Noun);
+            bool verbSave = Helpers.SaveNameGenerationFile(VerbInput.text, NameGenerationStringType.Verb);
+            success = roomNounSave && nounSave && verbSave;
+        }
+        else
+        {
+            string json = JsonUtility.ToJson(_rootObject);
+            success = Helpers.SaveGameFile(json, _currentInformationSet);
+        }
+
 
         if (success)
             MessageUI.text = "Save Successful";
@@ -82,7 +117,13 @@ public class CartridgeCreatorController : MonoBehaviour
 
     #endregion
 
-    #region Private Methods
+    #region Information Setup Methods
+
+    private void ShowDataEditor()
+    {
+        Helpers.ShowCanvasGroup(DataEditor);
+        Helpers.HideCanvasGroup(RoomGenerationEditor);
+    }
 
     /// <summary>
     /// Entry point for populating screen with information from JSON
@@ -105,6 +146,8 @@ public class CartridgeCreatorController : MonoBehaviour
             _rootObject = ObstacleDatabase.GetObstacleArray() ?? Activator.CreateInstance(typeof(ObstacleArray));
         else if (_currentInformationSet == InformationSet.ItemInformation)
             _rootObject = ItemDatabase.GetItemArray() ?? Activator.CreateInstance(typeof(ItemArray));
+        else if (_currentInformationSet == InformationSet.MessageInformation)
+            _rootObject = MessageDatabase.GetMessageData() ?? Activator.CreateInstance(typeof(MessageData));
 
         PopulateViewGroup(_rootObject, InfoContent);
         MessageUI.text = _currentInformationSet.ToString() + " loaded.";
@@ -172,8 +215,9 @@ public class CartridgeCreatorController : MonoBehaviour
         else if (field.FieldType.GetInterface("IEditable") != null)
         {
             object classObject = field.GetValue(obj);
-            InformationGridContainer_Class entry = lineItem.GetComponent<InformationGridContainer_Class>();
+            InformationGridEntry entry = lineItem.GetComponent<InformationGridEntry>();
             PopulateViewGroup(classObject, entry.Container);
+            entry.SetContainerToggle(true);
         }
     }
 
@@ -184,7 +228,7 @@ public class CartridgeCreatorController : MonoBehaviour
     private void CreateAndBindArrayField(object obj, FieldInfo field, Transform container)
     {
         GameObject lineItem = Instantiate(ArrayEntryPrefab, container, false);
-        InformationGridContainer_Array entry = lineItem.GetComponent<InformationGridContainer_Array>();
+        InformationGridEntry entry = lineItem.GetComponent<InformationGridEntry>();
         entry.Label.text = field.Name;
 
         object arrayObj = field.GetValue(obj);
@@ -194,7 +238,7 @@ public class CartridgeCreatorController : MonoBehaviour
             field.SetValue(obj, arrayObj);
         }
 
-        entry.Expander.onClick.AddListener(() => { ExpandArray(obj, field, entry.Container); });
+        entry.AddElementButton.onClick.AddListener(() => { ExpandArray(obj, field, entry.Container); });
 
         if (field.FieldType.GetElementType().IsArray)
         {
@@ -268,13 +312,14 @@ public class CartridgeCreatorController : MonoBehaviour
                         fieldEntries[index] = Activator.CreateInstance(elementType);
 
                     object classObject = fieldEntries[index];
-                    InformationGridContainer_Class classEntry = elementLineItem.GetComponent<InformationGridContainer_Class>();
+                    InformationGridEntry classEntry = elementLineItem.GetComponent<InformationGridEntry>();
 
                     //Clear container of previous entries
                     for (int c = 0; c < classEntry.Container.childCount; c++)
                         Destroy(classEntry.Container.GetChild(c).gameObject);
 
                     PopulateViewGroup(classObject, classEntry.Container);
+                    classEntry.SetContainerToggle(false);
                 }
             }
 
@@ -363,6 +408,9 @@ public class CartridgeCreatorController : MonoBehaviour
         _dirty = true;
     }
 
+    /// <summary>
+    /// Get line item prefab with type
+    /// </summary>
     private GameObject GetPrefabFromType(Type type)
     {
         if (type.GetInterface("IEditable") != null)
@@ -376,6 +424,29 @@ public class CartridgeCreatorController : MonoBehaviour
 
         Debug.LogWarning("No prefab was found for entry type: " + type.Name);
         return null;
+    }
+
+
+
+    #endregion
+
+    #region Name Generation Methods
+
+    private void ShowNameGenerationEditor()
+    {
+        Helpers.ShowCanvasGroup(RoomGenerationEditor);
+        Helpers.HideCanvasGroup(DataEditor);
+    }
+
+    private void PopulateNameGenerationFromFile()
+    {
+        string roomNouns = Helpers.LoadNameGenerationFile(NameGenerationStringType.RoomNoun);
+        string nouns = Helpers.LoadNameGenerationFile(NameGenerationStringType.Noun);
+        string verbs = Helpers.LoadNameGenerationFile(NameGenerationStringType.Verb);
+
+        RoomNounInput.text = roomNouns;
+        NounInput.text = nouns;
+        VerbInput.text = verbs;
     }
 
     #endregion

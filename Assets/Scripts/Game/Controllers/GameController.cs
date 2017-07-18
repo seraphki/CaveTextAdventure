@@ -7,7 +7,6 @@ public class GameController : MonoSingleton<GameController>
 {
     public static WorldManager WorldManagerInst;
     public static InventoryManager InventoryManagerInst;
-    public static ObstacleManager ObstacleManagerInst;
 
 	private float _loopTime = 1f;
 	private float _loopCountdown = 0f;
@@ -21,7 +20,6 @@ public class GameController : MonoSingleton<GameController>
         ActionQueue = new Queue<UnityAction>();
         WorldManagerInst = new WorldManager();
         InventoryManagerInst = new InventoryManager();
-        ObstacleManagerInst = new ObstacleManager();
     }
 
     private void Start()

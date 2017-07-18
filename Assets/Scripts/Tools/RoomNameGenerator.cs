@@ -1,8 +1,15 @@
 ﻿using UnityEngine;
 
+public enum NameGenerationStringType { RoomNoun, Noun, Verb }
 public class RoomNameGenerator
 {
-    private enum StringType { RoomNoun, Noun, Adjective }
+    private static bool _allWordsLoaded
+    {
+        get
+        {
+            return (RoomNouns.Length > 0 && Nouns.Length > 0 && Verbs.Length > 0);
+        }
+    }
 
     private static string[] _roomNouns;
     public static string[] RoomNouns
@@ -11,8 +18,8 @@ public class RoomNameGenerator
         {
             if (_roomNouns == null)
             {
-                TextAsset textAsset = Resources.Load("Text/RoomNouns") as TextAsset;
-                _roomNouns = textAsset.text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
+                string text = Helpers.LoadNameGenerationFile(NameGenerationStringType.RoomNoun);
+                _roomNouns = text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
             }
             return _roomNouns;
         }
@@ -25,24 +32,24 @@ public class RoomNameGenerator
         {
             if (_nouns == null)
             {
-                TextAsset textAsset = Resources.Load("Text/Nouns") as TextAsset;
-                _nouns = textAsset.text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
+                string text = Helpers.LoadNameGenerationFile(NameGenerationStringType.Noun);
+                _nouns = text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
             }
             return _nouns;
         }
     }
 
-    private static string[] _adjectives;
-    public static string[] Adjectives
+    private static string[] _verbs;
+    public static string[] Verbs
     {
         get
         {
-            if (_adjectives == null)
+            if (_verbs == null)
             {
-                TextAsset textAsset = Resources.Load("Text/Adjectives") as TextAsset;
-                _adjectives = textAsset.text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
+                string text = Helpers.LoadNameGenerationFile(NameGenerationStringType.Verb);
+                _verbs = text.Split(new string[] { "\n", "\r\n" }, System.StringSplitOptions.RemoveEmptyEntries);
             }
-            return _adjectives;
+            return _verbs;
         }
     }
 
@@ -51,37 +58,47 @@ public class RoomNameGenerator
         int style = Random.Range(0, 3);
         string name = "";
 
-        if (style == 0)
+        if (_allWordsLoaded)
         {
-            name = GetRandomString(StringType.RoomNoun) + " of " + GetRandomString(StringType.Noun);
-        }
-        else if (style == 1)
-        {
-            name = "The " + GetRandomString(StringType.Adjective) + " " + GetRandomString(StringType.RoomNoun);
+            if (style == 0)
+            {
+                name = "The " + GetRandomString(NameGenerationStringType.RoomNoun) 
+                    + " of " + GetRandomString(NameGenerationStringType.Noun);
+            }
+            else if (style == 1)
+            {
+                name = "The " + GetRandomString(NameGenerationStringType.Verb) 
+                    + " " + GetRandomString(NameGenerationStringType.RoomNoun);
+            }
+            else
+            {
+                name = "The " + GetRandomString(NameGenerationStringType.Verb) 
+                    + " " + GetRandomString(NameGenerationStringType.RoomNoun)
+                    + " of " + GetRandomString(NameGenerationStringType.Noun);
+            }
         }
         else
         {
-            name = "The " + GetRandomString(StringType.Adjective) + " " + GetRandomString(StringType.RoomNoun)
-                + " of " + GetRandomString(StringType.Noun);
+            name = "The Room";
         }
 
         return name;
     }
 
 
-    private static string GetRandomString(StringType type)
+    private static string GetRandomString(NameGenerationStringType type)
     {
-        if (type == StringType.Adjective)
+        if (type == NameGenerationStringType.Verb)
         {
-            int index = Random.Range(0, Adjectives.Length);
-            return Adjectives[index];
+            int index = Random.Range(0, Verbs.Length);
+            return Verbs[index];
         }
-        else if (type == StringType.Noun)
+        else if (type == NameGenerationStringType.Noun)
         {
             int index = Random.Range(0, Nouns.Length);
             return Nouns[index];
         }
-        else if (type == StringType.RoomNoun)
+        else if (type == NameGenerationStringType.RoomNoun)
         {
             int index = Random.Range(0, RoomNouns.Length);
             return RoomNouns[index];

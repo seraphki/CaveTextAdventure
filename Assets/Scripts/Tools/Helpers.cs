@@ -18,6 +18,15 @@ public static class Helpers
 
         return "";
     }
+    
+    public static string LoadNameGenerationFile(NameGenerationStringType type)
+    {
+        string path = GetPathFromNameGenerationSet(type);
+        if (File.Exists(path))
+            return File.ReadAllText(path);
+
+        return "";
+    }
 
     public static void CreateAllGameFiles()
     {
@@ -27,35 +36,68 @@ public static class Helpers
         InformationSet[] infoSets = Enum.GetValues(typeof(InformationSet)).Cast<InformationSet>().ToArray();
         for (int i = 0; i < infoSets.Length; i++)
         {
-            string path = GetPathFromInformationSet(infoSets[i]);
-            if (!File.Exists(path))
+            if (infoSets[i] != InformationSet.NameGeneration)
             {
-                Type type = GetTypeFromInformationSet(infoSets[i]);
-                object data = Activator.CreateInstance(type);
-                string json = JsonUtility.ToJson(data);
-                SaveGameFile(json, infoSets[i]);
+                string path = GetPathFromInformationSet(infoSets[i]);
+
+                string dir = Path.GetDirectoryName(path);
+                if (!Directory.Exists(dir))
+                    Directory.CreateDirectory(dir);
+
+                if (!File.Exists(path))
+                {
+                    Type type = GetTypeFromInformationSet(infoSets[i]);
+                    object data = Activator.CreateInstance(type);
+                    string json = JsonUtility.ToJson(data);
+                    SaveGameFile(json, infoSets[i]);
+                }
             }
+        }
+
+        NameGenerationStringType[] nameGenerationInfoSets = Enum.GetValues(typeof(NameGenerationStringType)).Cast<NameGenerationStringType>().ToArray();
+        for (int i = 0; i < nameGenerationInfoSets.Length; i++)
+        {
+            string path = GetPathFromNameGenerationSet(nameGenerationInfoSets[i]);
+
+            string dir = Path.GetDirectoryName(path);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir);
+
+            if (!File.Exists(path))
+                File.Create(path);
         }
     }
 
     public static bool SaveGameFile(string json, InformationSet informationSet)
     {
-        string directory = GameInfo.CurrentGamePath;
         string path = GetPathFromInformationSet(informationSet);
-        if (!Directory.Exists(directory))
-            Directory.CreateDirectory(directory);
+        return SaveFile(json, path);     
+    }
+
+    public static bool SaveNameGenerationFile(string text, NameGenerationStringType type)
+    {
+        string path = GetPathFromNameGenerationSet(type);
+        return SaveFile(text, path);
+    }
+
+    public static bool SaveFile(string text, string path)
+    {
+        string dir = Path.GetDirectoryName(path);
+        if (!Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
 
         try
         {
-            File.WriteAllText(path, json);
+            Debug.Log("Saving to: " + path);
+            File.WriteAllText(path, text);
             return true;
         }
-        catch
+        catch (Exception e)
         {
+            Debug.Log("Save Failed: " + e.Message);
             return false;
-        }       
+        }
     }
-
 
     public static string GetPathFromInformationSet(InformationSet infoSet)
     {
@@ -73,6 +115,22 @@ public static class Helpers
                 return GameInfo.ObstacleDataPath;
             case InformationSet.ItemInformation:
                 return GameInfo.ItemDataPath;
+            case InformationSet.MessageInformation:
+                return GameInfo.MessageDataPath;
+        }
+        return "";
+    }
+
+    public static string GetPathFromNameGenerationSet(NameGenerationStringType type)
+    {
+        switch (type)
+        {
+            case NameGenerationStringType.RoomNoun:
+                return GameInfo.RoomNounPath;
+            case NameGenerationStringType.Noun:
+                return GameInfo.NounPath;
+            case NameGenerationStringType.Verb:
+                return GameInfo.VerbPath;
         }
         return "";
     }
@@ -95,5 +153,19 @@ public static class Helpers
                 return typeof(ItemArray);
         }
         return null;
+    }
+
+    public static void ShowCanvasGroup(CanvasGroup group)
+    {
+        group.alpha = 1;
+        group.interactable = true;
+        group.blocksRaycasts = true;
+    }
+
+    public static void HideCanvasGroup(CanvasGroup group)
+    {
+        group.alpha = 0;
+        group.interactable = false;
+        group.blocksRaycasts = false;
     }
 }

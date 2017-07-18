@@ -118,15 +118,12 @@ public class Level
             if (i != _exitPoint)
                 roomIndecies.Add(i);
         }
-
-        Debug.Log("Start Level Population");
+        
         while (roomIndecies.Count > 0)
         {
             int i = Random.Range(0, roomIndecies.Count);
             int roomIndex = roomIndecies[i];
             roomIndecies.Remove(roomIndex);
-
-            Debug.Log("Populating room " + roomIndex);
 
             string roomId = null;
             if (roomDataIndicies.Count > 0)
@@ -136,9 +133,9 @@ public class Level
                 roomDataIndicies.Remove(roomId);
             }
 
-            _rooms[roomIndex].StaticData = roomId == null ? RoomDatabase.GetFillerRoom() : RoomDatabase.GetRoomData(roomId);
+            RoomData data = roomId == null ? RoomDatabase.GetFillerRoom() : RoomDatabase.GetRoomData(roomId);
+            _rooms[roomIndex].Setup(data);
         }
-        Debug.Log("End level population");
     }
 
     private Vector2 VectorFromDirection(int direction)
